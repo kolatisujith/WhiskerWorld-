@@ -1,0 +1,134 @@
+================================================================================
+                    WHISKER WORLD — QUICK APPLICATION GUIDE
+================================================================================
+
+1. WHAT IS WHISKER WORLD?
+--------------------------------------------------------------------------------
+Whisker World is a modern, ethical pet discovery and adoption web application
+specialized in connecting loving families with newborn and young companion
+animals (puppies, kittens, kits, baby birds, and young pets) from verified
+stores, shelters, and licensed breeders.
+
+Core Motto: "Every Paw Deserves a Loving Home."
+
+
+2. WHO ARE THE USERS?
+--------------------------------------------------------------------------------
+- ADOPTERS: Families or individuals searching for a pet. They can search, view
+  certified health passports, locate stores on the live GPS map, bookmark
+  favorites, submit adoption questionnaires, and track status.
+- CAREGIVERS / PET OWNERS: Licensed stores, shelters, and ethical breeders who
+  list pets, upload medical records, review adoption inquiries, and coordinate
+  safe handovers.
+- GUESTS: Anyone visiting the site can browse pets, watch the interactive demo
+  video on Home, read How It Works, and check the About page.
+
+
+3. KEY PAGES & WHAT THEY DO
+--------------------------------------------------------------------------------
+- HOME PAGE (/):
+  * Hero search bar with quick breed/species lookup.
+  * Interactive Cinema 4K Demo Video Player (simulates the entire platform tour).
+  * Categories (Puppies, Kittens, Birds, Bunnies, Small & Furry).
+  * Featured verified stores and featured young companion cards.
+  * Direct deep-scroll support: appending `?scrollTo=demo` smoothly glides
+    straight down to the video player.
+
+- FIND PETS (/pets):
+  * Comprehensive companion catalog with multi-parameter filtering:
+    species, gender, age in weeks/months, size, fee range, and stores.
+  * Real-time sorting (Newest, Oldest, Youngest, Price Low/High).
+
+- PET DETAILS (/pets/:id):
+  * Photo gallery, age in weeks and life stage (newborn, baby, young).
+  * Certified Digital Veterinary Passport: DHPP, Rabies, deworming, microchip ID.
+  * Direct "Apply to Adopt" button opening the adoption questionnaire.
+  * "View on Map" button showing the exact nursery location.
+
+- PET & STORE MAP (/map):
+  * Interactive GPS mapping interface.
+  * Pins representing verified pet stores and nurseries.
+  * Distance calculations and driving radii (5, 10, 25, 50 miles).
+
+- HOW IT WORKS (/how-it-works):
+  * Interactive Role Switcher ("For Pet Adopters" vs "For Pet Stores").
+  * 5-step detailed roadmap for each user journey.
+  * Technical architecture breakdown (reactive state, geolocation, role guards).
+  * Frequently Asked Questions (FAQ) expandable cards.
+  * Prominent "Tap Home to See Demo Video" buttons.
+
+- ABOUT PAGE (/about):
+  * Official mission and founding story tackling puppy mills.
+  * 4 Core Guiding Values & platform impact metrics (1,250+ adoptions).
+  * Leadership & Veterinary Advisory Board profiles.
+  * The Whisker World 5-Point Ethical Guarantee.
+
+
+4. THE ADOPTION WORKFLOW (HOW APPLICATIONS WORK)
+--------------------------------------------------------------------------------
+1. ADOPTER SUBMITS APPLICATION:
+   - Adopter fills out the application form on Pet Details (reasons for adoption,
+     pet experience, living environment, household pets, contact preference).
+   - Application status becomes [PENDING].
+
+2. OWNER / CAREGIVER RECEIVES & REVIEWS APPLICATION:
+   - Owner receives inquiry on Owner Dashboard & Inquiries screen.
+   - Owner opens "Full Application Form" (`ApplicationDetailsModal`) to review
+     all applicant responses, living environment, experience, and contact data.
+
+3. OWNER ACCEPTS APPLICATION & CONFIGURES HANDOVER & PAYMENT:
+   - Owner taps "Approve" which opens the Handover & Payment Modal (`ApproveAdoptionDialog`).
+   - Owner specifies:
+     * Pet Delivery / Handover Method: Owner Home Delivery, Store/Shelter Pickup,
+       Neutral Meetup (e.g. Vet Clinic), or Safe Pet Courier.
+     * Handover Address: Pre-filled with store, clinic, or residence address.
+     * Scheduled Date & Time: Handover schedule (e.g. "Saturday at 2:00 PM").
+     * Delivery Instructions: Guidelines on pet carrier, leash, food, and records.
+     * Payment Method: Cash on Handover, Direct Bank Wire, UPI / Mobile Wallet,
+       Store Credit/Debit Card, or Fee Waived.
+     * Adoption Fee Amount: Pre-filled with pet fee.
+     * Payment Instructions: Bank account details, UPI ID, or cash instructions.
+     * Personal Approval Note: Encouraging welcome message from owner.
+   - When owner approves:
+     * Status becomes [APPROVED]. Pet availability status becomes [PENDING] (Pending Adoption).
+     * System automatically dispatches an official adoption email to the adopter's email address.
+     * Email record is permanently archived in `email_notifications`.
+
+4. ADOPTER RECEIVES EMAIL & VIEWS HANDOVER & PAYMENT DETAILS:
+   - Adopter receives email notification with complete pet delivery and payment instructions.
+   - Adopter Requests portal displays prominent "Handover & Payment Details" cards
+     with one-tap "Copy Delivery Info" and "Copy Payment Details" buttons.
+   - Adopter can open the interactive "View Received Email" dialog (`EmailPreviewDialog`)
+     simulating an official email client anytime.
+
+5. FINALIZING ADOPTION:
+   - After in-person handover and payment completion, owner taps "Finalize Adoption".
+   - Pet status permanently transitions to [ADOPTED].
+   - All competing pending applications for that specific companion are automatically closed.
+
+
+5. TECHNOLOGY STACK HIGHLIGHTS
+--------------------------------------------------------------------------------
+- Front-End: Flutter Web (Dart 3.5+)
+- Database: Relational SQLite (sqflite_common_ffi_web via WebAssembly / native FFI, Schema V7)
+- State Management: Provider (MultiProvider pattern)
+- Routing: GoRouter with reactive authentication & role guards
+- Design System: Material 3, Google Fonts (Plus Jakarta Sans), Light & Dark mode
+- Security: Salted HMAC-SHA256 password hashing (16-byte random salt)
+- Notification Engine: In-app Email Notification System with full email previewer
+- Testing: Comprehensive unit, widget, and integration test suites passing 100%
+
+
+6. HOW TO RUN THE APP LOCALLY
+--------------------------------------------------------------------------------
+- Run in Chrome:
+  flutter run -d chrome
+
+- Run tests:
+  flutter test test/adoption_handover_and_email_test.dart
+  flutter test test/adoption_workflow_test.dart
+  flutter test test/how_it_works_test.dart
+  flutter test test/about_screen_test.dart
+  flutter test test/home_animations_and_demo_test.dart
+  flutter test test/phase8_final_verification_test.dart
+

@@ -1,0 +1,605 @@
+================================================================================
+                    SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
+                           FOR WHISKER WORLD WEB APP
+================================================================================
+Document Version: 1.0.0
+Product Name: Whisker World (Young Pet Discovery & Ethical Adoption Platform)
+Platform: Flutter Web / Multiplatform (Dart 3.5+)
+Architecture: Layered Architecture (Presentation, State Management, Domain, Data)
+Database: SQLite (sqflite_common_ffi_web via WebAssembly / native FFI)
+Motto: "Every Paw Deserves a Loving Home"
+================================================================================
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+1. INTRODUCTION
+   1.1 Purpose
+   1.2 Scope of the Application
+   1.3 Definitions, Acronyms, and Abbreviations
+   1.4 References
+   1.5 Document Overview
+
+2. OVERALL SYSTEM DESCRIPTION
+   2.1 Product Perspective
+   2.2 Core Product Functions
+   2.3 User Classes and Characteristics (Personas)
+   2.4 Operating Environment
+   2.5 Design and Implementation Constraints
+   2.6 Assumptions and Dependencies
+
+3. SPECIFIC FUNCTIONAL REQUIREMENTS
+   3.1 Module 1: User Authentication & Role-Based Access Control
+   3.2 Module 2: Young Pet Catalog, Terminology & Search Engine
+   3.3 Module 3: Interactive Geospatial Discovery Map
+   3.4 Module 4: Certified Pet Stores & Ethical Nurseries
+   3.5 Module 5: Immutable Digital Veterinary Health Passports
+   3.6 Module 6: Adoption Inquiry & Application Workflow Engine
+   3.7 Module 7: User Favorites & Bookmarks
+   3.8 Module 8: Homepage & Interactive Cinema Demo Showcase
+   3.9 Module 9: "How It Works" Dual-Role Guide & Deep Links
+   3.10 Module 10: Official "About Us" & Ethical Guarantee
+
+4. NON-FUNCTIONAL REQUIREMENTS
+   4.1 Security & Cryptography
+   4.2 Performance & Responsiveness
+   4.3 Reliability, Availability & ACID Data Integrity
+   4.4 Usability & Material 3 Design System
+   4.5 Cross-Platform Portability & Mobile Adaptability
+
+5. SYSTEM ARCHITECTURE & DATA DESIGN
+   5.1 High-Level Architectural Flow
+   5.2 State Management Design (Provider Pattern)
+   5.3 Declarative Routing & Route Guards (GoRouter)
+   5.4 SQLite Relational Database Schema & Foreign Key Enforcements
+
+6. USER FLOWS & STATE MACHINES
+   6.1 Adopter End-to-End Adoption Sequence
+   6.2 Caregiver Store & Pet Management Sequence
+   6.3 Adoption Application State Machine Lifecycle
+
+7. VERIFICATION, TESTING & QUALITY ASSURANCE
+   7.1 Unit & Cryptographic Tests
+   7.2 Widget & Component Tests
+   7.3 Integration & Security Verification Suite
+
+8. APPENDIX & CREDENTIALS
+   8.1 Pre-seeded Demo Accounts
+   8.2 Available Routes & Endpoints
+
+================================================================================
+1. INTRODUCTION
+================================================================================
+
+1.1 PURPOSE
+This document provides a formal Software Requirements Specification (SRS) for 
+the Whisker World application. It outlines functional and non-functional 
+requirements, software architecture, data models, state machines, and quality 
+standards for developers, testers, and stakeholders.
+
+1.2 SCOPE OF THE APPLICATION
+Whisker World is a web-based, ethical companion discovery and adoption system. 
+It enables prospective pet adopters to find young animals (puppies, kittens, 
+bunnies/kits, baby birds, foals) from licensed pet stores, certified shelters, 
+and verified breeders. 
+
+The software eliminates unethical puppy mills by requiring commercial licensing, 
+physical location validation, and verified veterinary vaccination passports 
+before any young animal can be listed. It provides an automated, transparent 
+adoption application workflow from initial submission to final transfer.
+
+1.3 DEFINITIONS, ACRONYMS, AND ABBREVIATIONS
+- SRS: Software Requirements Specification
+- DVM: Doctor of Veterinary Medicine
+- FFI: Foreign Function Interface
+- WASM: WebAssembly
+- DHPP: Distemper, Hepatitis, Parvovirus, Parainfluenza vaccine for dogs
+- FVRCP: Feline Viral Rhinotracheitis, Calicivirus, Panleukopenia vaccine for cats
+- HMAC: Hash-Based Message Authentication Code (HMAC-SHA256)
+- ACID: Atomicity, Consistency, Isolation, Durability
+- UI/UX: User Interface / User Experience
+
+1.4 REFERENCES
+- IEEE Std 830-1998: Recommended Practice for Software Requirements Specifications
+- Flutter Web Documentation (flutter.dev)
+- SQLite Documentation (sqlite.org)
+- Material Design 3 Guidelines (m3.material.io)
+
+1.5 DOCUMENT OVERVIEW
+The remainder of this specification describes user classes, functional 
+breakdowns, database entities, security practices, and testing strategies.
+
+================================================================================
+2. OVERALL SYSTEM DESCRIPTION
+================================================================================
+
+2.1 PRODUCT PERSPECTIVE
+Whisker World functions as a self-contained, high-performance Web Application 
+with offline and client-side database capability via WebAssembly SQLite. 
+It replaces traditional static classifieds with dynamic search, geospatial map 
+markers, real-time application trackers, and video walkthrough components.
+
+2.2 CORE PRODUCT FUNCTIONS
+1. Account management with role-segregated authorization (Adopter vs Pet Owner).
+2. Advanced pet filtering (species, breed, age in weeks/months, size, temperament).
+3. Interactive GPS Pet & Store Discovery Map with distance calculation.
+4. Digital Veterinary Health Passports with verified vaccination timelines.
+5. In-app adoption questionnaire submission and multi-stage status management.
+6. Store management portal for caregivers (listing, editing, applicant review).
+7. Bookmarking favorites with unique database constraints.
+8. Interactive Cinema Demo Video player on the home page with deep-scroll links.
+9. Comprehensive educational pages: How It Works & Official About Us.
+
+2.3 USER CLASSES AND CHARACTERISTICS (PERSONAS)
+1. Pet Adopter:
+   - Prospective pet parent seeking a healthy young companion.
+   - Abilities: Browse pets, search on map, inspect health passports, save 
+     favorites, submit adoption inquiries, track status on Adopter Dashboard.
+2. Pet Owner / Store Caregiver:
+   - Licensed pet store manager, ethical breeder, or animal rescue coordinator.
+   - Abilities: Manage store profile, publish companion profiles, record 
+     vaccinations, review adoption questionnaires, approve/reject/finalize.
+3. Guest / Anonymous Visitor:
+   - Public user exploring the platform.
+   - Abilities: Search pets, view store details, inspect How It Works and About 
+     pages, watch interactive platform demo, access login/register.
+
+2.4 OPERATING ENVIRONMENT
+- Browsers: Google Chrome, Mozilla Firefox, Apple Safari, Microsoft Edge.
+- Responsive breakpoints: Mobile (< 600px), Tablet (600px - 1024px), 
+  Desktop (> 1024px).
+- Database Engine: SQLite 3 via `sqflite_common_ffi_web` (WebAssembly/IndexedDB) 
+  and native FFI on desktop/VM tests.
+
+2.5 DESIGN AND IMPLEMENTATION CONSTRAINTS
+- Strict relational constraints (`PRAGMA foreign_keys = ON`).
+- Store Isolation: Stores must only query and display their own assigned pets.
+- Zero plaintext passwords: HMAC-SHA256 salted password hashing.
+- Material 3 aesthetic with complete Light and Dark theme persistence.
+
+2.6 ASSUMPTIONS AND DEPENDENCIES
+- Client browser supports modern ECMAScript and WebAssembly.
+- Geolocation calculations utilize Haversine formula based on store lat/lng.
+
+================================================================================
+3. SPECIFIC FUNCTIONAL REQUIREMENTS
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1 MODULE 1: USER AUTHENTICATION & ROLE-BASED ACCESS CONTROL
+--------------------------------------------------------------------------------
+- FR-1.1: Registration: Users can register as Pet Adopter or Pet Owner.
+- FR-1.2: Password Hashing: Password must be hashed using HMAC-SHA256 with a 
+  cryptographically secure 16-byte random salt.
+- FR-1.3: Uniqueness: Email addresses must be unique in the database.
+- FR-1.4: Session Persistence: Active user tokens and IDs must persist in 
+  `SharedPreferences` across browser refreshes.
+- FR-1.5: Route Protection: Unauthenticated users attempting to access protected 
+  routes (`/adopter/*`, `/owner/*`, `/profile`) must be redirected to `/login`.
+- FR-1.6: Role Segregation: Pet Adopters cannot access `/owner/*` paths, and Pet 
+  Owners cannot access `/adopter/*` paths.
+
+--------------------------------------------------------------------------------
+3.2 MODULE 2: YOUNG PET CATALOG, TERMINOLOGY & SEARCH ENGINE
+--------------------------------------------------------------------------------
+- FR-2.1: Species Terminology: The system automatically maps species to young 
+  terminology:
+  * Dog -> Puppy
+  * Cat -> Kitten
+  * Rabbit -> Kit
+  * Bird -> Chick / Fledgling
+  * Horse -> Foal
+- FR-2.2: Life Stages: Tracks life stages: `newborn`, `baby`, `young`, 
+  `adolescent`, `adult`, `senior`.
+- FR-2.3: Dynamic Search: Real-time search by pet name, breed, location, or store.
+- FR-2.4: Multi-Filter: Filter by species, gender, age range, size, fee, and store.
+- FR-2.5: Sorting: Sort by Newest, Oldest, Youngest, Fee Low->High, Fee High->Low.
+- FR-2.6: Availability Status: Displays status badges: `available`, `pending`, 
+  `adopted`.
+
+--------------------------------------------------------------------------------
+3.3 MODULE 3: INTERACTIVE GEOSPATIAL DISCOVERY MAP
+--------------------------------------------------------------------------------
+- FR-3.1: Interactive Map: Renders map pins for registered stores and pets.
+- FR-3.2: Store Details Popup: Tapping a pin reveals store name, address, 
+  available pets count, rating, and direct navigation links.
+- FR-3.3: Radius Filter: Search stores and companions within 5, 10, 25, or 50 miles.
+- FR-3.4: Deep Linking: Query parameter `?petId=xyz` highlights the companion's 
+  store automatically.
+
+--------------------------------------------------------------------------------
+3.4 MODULE 4: CERTIFIED PET STORES & ETHICAL NURSERIES
+--------------------------------------------------------------------------------
+- FR-4.1: Store Profile: Displays cover banner, logo, verified badge, description, 
+  opening hours, contact phone, email, and physical address.
+- FR-4.2: Store-Specific Pet Listings (Strict Isolation): Store detail page only 
+  queries and displays pets belonging to that store via SQL:
+  `SELECT * FROM pets WHERE store_id = ? AND availability_status = 'available'`.
+- FR-4.3: Store Management: Owners can create, update, and manage store metadata.
+
+--------------------------------------------------------------------------------
+3.5 MODULE 5: IMMUTABLE DIGITAL VETERINARY HEALTH PASSPORTS
+--------------------------------------------------------------------------------
+- FR-5.1: Health Passport: Each pet card features a verifiable medical passport.
+- FR-5.2: Core Vaccination Records: Logs DHPP, Rabies, FVRCP, Bordetella vaccine 
+  dates, batch numbers, and administering veterinary clinic.
+- FR-5.3: Deworming & Parasite Prevention: Tracks treatment dates and next due date.
+- FR-5.4: Microchip ID: Displays ISO-compliant 15-digit microchip identifier.
+- FR-5.5: Vet Health Guarantee: Certified declaration of health inspection.
+
+--------------------------------------------------------------------------------
+3.6 MODULE 6: ADOPTION INQUIRY & APPLICATION WORKFLOW ENGINE
+--------------------------------------------------------------------------------
+- FR-6.1: Structured Application Questionnaire: Adopter fills out reason for
+  adoption, prior pet experience, household living environment (yard, house/apartment),
+  other resident animals, preferred contact method (Email, Phone, SMS), and optional notes.
+- FR-6.2: State Machine Lifecycle:
+  * `pending`: Application submitted by adopter; pet remains `available`.
+  * `approved`: Caregiver approves; pet status transitions to `pending` 
+    (Pending Adoption). Delivery and payment agreements are locked into the request.
+  * `rejected`: Caregiver declines application with feedback note; pet status 
+    remains `available`.
+  * `cancelled`: Adopter withdraws inquiry; pet status restored to `available`.
+  * `completed`: Finalizes adoption after physical handover and payment; pet status
+    permanently becomes `adopted`. Any competing pending applications auto-rejected.
+- FR-6.3: Owner Application Review Modal (`ApplicationDetailsModal`):
+  Owner can inspect the complete application filled by the adopter, including applicant
+  full name, email, phone, location, living conditions, experience, other pets, and
+  submission timestamp.
+- FR-6.4: Owner Acceptance & Handover / Delivery Configuration (`ApproveAdoptionDialog`):
+  When approving an application, the owner specifies:
+  * Handover / Delivery Method: Owner Home Delivery, Store/Shelter Pickup, Neutral Meetup,
+    or Safe Pet Courier.
+  * Handover Location / Address: Exact physical location for pet collection or delivery.
+  * Handover Schedule: Estimated date and time for the handover.
+  * Delivery Instructions: Requirements for carrier, leash, medical documentation,
+    and starter food.
+- FR-6.5: Payment Method & Purchase Details Specification:
+  Owner defines how the adopter should buy/pay the adoption fee:
+  * Payment Method: Cash on Handover, Direct Bank Wire, UPI / Mobile Wallet, Store Card,
+    or Fee Waived.
+  * Adoption Fee Amount: Pre-populated with pet fee and editable if discounted or waived.
+  * Payment Instructions & Account Details: Concrete payment guidelines (cash on inspection,
+    bank account/routing number, or UPI address).
+- FR-6.6: Automated Official Email Notification Dispatch:
+  Upon application approval, the system generates and dispatches an official adoption email
+  to the adopter's registered email address, containing comprehensive pet details, owner note,
+  complete delivery instructions, payment method breakdown, and adoption checklist.
+- FR-6.7: Adopter Portal Handover Card & Interactive Email Viewer (`EmailPreviewDialog`):
+  Adopter Requests screen prominently displays the approved Handover & Payment cards with
+  one-tap copy buttons. An in-app interactive email simulator allows viewing the exact
+  official email received at any time.
+
+--------------------------------------------------------------------------------
+3.7 MODULE 7: USER FAVORITES & BOOKMARKS
+--------------------------------------------------------------------------------
+- FR-7.1: Bookmark Pet: Adopter can toggle favorites with instant visual feedback.
+- FR-7.2: Database Constraint: Enforced via `UNIQUE(user_id, pet_id)` in SQLite.
+- FR-7.3: Favorites Screen: Displays all bookmarked pets with quick-remove action.
+
+--------------------------------------------------------------------------------
+3.8 MODULE 8: HOMEPAGE & INTERACTIVE CINEMA DEMO SHOWCASE
+--------------------------------------------------------------------------------
+- FR-8.1: Hero Section: Quick search bar, platform trust stats, and motto badge.
+- FR-8.2: Cinema Demo Video Player: Interactive component simulating a 4K 
+  product tour with 5 chapters (Overview, Profiles, Map, Inquiries, Dashboard).
+- FR-8.3: Direct Deep-Scroll: Navigation to `/?scrollTo=demo` automatically 
+  smooth-scrolls the page directly to the Cinema Demo Video player.
+- FR-8.4: Category Carousel: Quick filters for Dogs, Cats, Birds, Bunnies, Small pets.
+- FR-8.5: Featured Stores & Young Pets: Dynamic grid pulling from SQLite database.
+
+--------------------------------------------------------------------------------
+3.9 MODULE 9: "HOW IT WORKS" DUAL-ROLE GUIDE & DEEP LINKS
+--------------------------------------------------------------------------------
+- FR-9.1: Role Selector: Interactive toggle between "For Pet Adopters & Families" 
+  and "For Pet Stores & Caregivers".
+- FR-9.2: Step-by-Step Roadmaps:
+  * Adopter: Discover -> Live Map -> Health Passports -> Apply -> Welcome Home.
+  * Caregiver: Register Store -> List Companions -> Medical Passports -> Screen -> Handover.
+- FR-9.3: Platform Architecture Explained: Clear breakdown of reactive state, 
+  geolocation engine, immutable medical logs, and role guards.
+- FR-9.4: FAQ Accordion: Expandable answers to common adoption questions.
+- FR-9.5: Tap Home Button: Prominent buttons throughout directing users to the 
+  home page demo video (`/?scrollTo=demo`).
+
+--------------------------------------------------------------------------------
+3.10 MODULE 10: OFFICIAL "ABOUT US" & ETHICAL GUARANTEE
+--------------------------------------------------------------------------------
+- FR-10.1: Official Mission & Founding Story: Details the origin and purpose of 
+  Whisker World in eradicating puppy mills and establishing health transparency.
+- FR-10.2: Platform Impact: Metrics displaying 1,250+ Adoptions, 48 Nurseries, 
+  100% Health Guarantee, and 0% Puppy Mill Tolerance.
+- FR-10.3: Core Guiding Values: Certified Health First, Zero Tolerance for Mills, 
+  Radical Transparency, Lifelong Compassion.
+- FR-10.4: Web Application Capabilities: Detailed matrix of tools available for 
+  adopters, caregivers, and veterinary partners.
+- FR-10.5: Leadership & Veterinary Advisory Board: Profiles for Chief Veterinary 
+  Officer, Founder, Audit Head, and Adoption Support Lead.
+- FR-10.6: 5-Point Ethical Guarantee: Strict code of conduct (8-week mother bond, 
+  core shots, microchip, disclosed allergies, rehoming safety net).
+
+================================================================================
+4. NON-FUNCTIONAL REQUIREMENTS
+================================================================================
+
+4.1 SECURITY & CRYPTOGRAPHY
+- NFR-1.1: Password Storage: Passwords stored as `salt$hash` using HMAC-SHA256 
+  with 16-byte cryptographically secure random salt. Plaintext passwords never saved.
+- NFR-1.2: SQL Injection Prevention: All SQLite queries executed via parameterized 
+  bindings (`?`).
+- NFR-1.3: User Isolation: Adopter A cannot view/cancel Adopter B's requests or 
+  favorites. Owner A cannot edit/delete Owner B's pets or stores.
+
+4.2 PERFORMANCE & RESPONSIVENESS
+- NFR-2.1: Page Transitions: Sub-100ms client-side route navigation via GoRouter.
+- NFR-2.2: Database Queries: Local SQLite queries complete in < 15ms.
+- NFR-2.3: Rendering Frame Rate: 60 FPS smooth scrolling with `ScrollFadeSlide` 
+  and `HoverCard` micro-animations.
+
+4.3 RELIABILITY, AVAILABILITY & ACID DATA INTEGRITY
+- NFR-3.1: ACID Compliance: Atomic transactions wrap multi-table state updates 
+  (e.g., adoption completion updating pet status and rejecting competing requests).
+- NFR-3.2: Foreign Key Integrity: SQLite foreign keys strictly enforced on connection.
+- NFR-3.3: Crash Resilience: Unhandled navigation errors caught by GoRouter 
+  errorBuilder and fallback screens.
+
+4.4 USABILITY & MATERIAL 3 DESIGN SYSTEM
+- NFR-4.1: Curated Palette: Warm Cream (`#FAF7F2`), Primary Coral (`#FF6B4A`), 
+  Charcoal (`#22252A`), Natural Sage Green (`#4A7C59`).
+- NFR-4.2: Dark Mode: Full dark theme (`#141619` background, `#242830` surface).
+- NFR-4.3: Typography: Google Fonts (Plus Jakarta Sans).
+
+4.5 CROSS-PLATFORM PORTABILITY & MOBILE ADAPTABILITY
+- NFR-5.1: Fully responsive layout dynamically adapting via `ResponsiveLayout`.
+- NFR-5.2: Dedicated mobile bottom navigation bar and expandable drawer.
+
+================================================================================
+5. SYSTEM ARCHITECTURE & DATA DESIGN
+================================================================================
+
+5.1 HIGH-LEVEL ARCHITECTURAL FLOW
++-------------------------------------------------------------+
+|                      PRESENTATION LAYER                     |
+|  Screens (Home, Pets, Stores, Map, HowItWorks, About, etc.)  |
+|  Widgets (Navbar, Footer, PetCard, DemoVideoShowcase, etc.) |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                    STATE MANAGEMENT LAYER                   |
+|  AuthProvider, PetProvider, StoreProvider, ThemeProvider     |
+|                   (ChangeNotifier Pattern)                  |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                        DOMAIN LAYER                         |
+|   Models: UserModel, PetModel, PetStoreModel,               |
+|           AdoptionRequestModel, FavoriteModel               |
+|   Enums: UserRole, AnimalType, AvailabilityStatus, etc.     |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                     DATA & STORAGE LAYER                    |
+|   DatabaseRepositoryImpl, AuthService                       |
+|   DatabaseService (SQLite via WebAssembly / native FFI)     |
+|   SharedPreferences (Session Tokens & Theme Persistence)    |
++-------------------------------------------------------------+
+
+5.2 DATABASE SCHEMA (SQLITE)
+
+TABLE users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    phone TEXT,
+    role TEXT NOT NULL CHECK(role IN ('pet_owner', 'pet_adopter')),
+    location TEXT,
+    avatar_url TEXT,
+    created_at TEXT NOT NULL
+);
+
+TABLE pet_stores (
+    id TEXT PRIMARY KEY,
+    owner_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    state TEXT NOT NULL,
+    zip_code TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    phone TEXT,
+    email TEXT,
+    website TEXT,
+    rating REAL DEFAULT 5.0,
+    review_count INTEGER DEFAULT 0,
+    opening_hours TEXT,
+    logo_url TEXT,
+    cover_image_url TEXT,
+    is_verified INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+TABLE pets (
+    id TEXT PRIMARY KEY,
+    store_id TEXT NOT NULL,
+    owner_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    animal_type TEXT NOT NULL,
+    young_term TEXT NOT NULL,
+    breed TEXT NOT NULL,
+    age_in_days INTEGER NOT NULL,
+    age_display TEXT NOT NULL,
+    life_stage TEXT NOT NULL,
+    gender TEXT NOT NULL,
+    size TEXT NOT NULL,
+    color TEXT,
+    description TEXT,
+    adoption_fee REAL DEFAULT 0.0,
+    availability_status TEXT DEFAULT 'available',
+    is_vaccinated INTEGER DEFAULT 1,
+    is_dewormed INTEGER DEFAULT 1,
+    is_microchipped INTEGER DEFAULT 1,
+    microchip_id TEXT,
+    health_notes TEXT,
+    temperament_tags TEXT,
+    photos_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (store_id) REFERENCES pet_stores(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+TABLE adoption_requests (
+    id TEXT PRIMARY KEY,
+    pet_id TEXT NOT NULL,
+    adopter_id TEXT NOT NULL,
+    owner_id TEXT,
+    store_id TEXT,
+    status TEXT DEFAULT 'pending',
+    message TEXT NOT NULL,
+    reason_for_adoption TEXT,
+    pet_experience TEXT,
+    living_environment TEXT,
+    other_pets TEXT,
+    contact_preference TEXT,
+    delivery_method TEXT,
+    delivery_address TEXT,
+    delivery_date TEXT,
+    delivery_instructions TEXT,
+    payment_method TEXT,
+    payment_amount REAL,
+    payment_instructions TEXT,
+    approval_message TEXT,
+    email_sent_to TEXT,
+    email_sent_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE,
+    FOREIGN KEY (adopter_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (store_id) REFERENCES pet_stores(id) ON DELETE SET NULL
+);
+
+TABLE favorites (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    pet_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE(user_id, pet_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
+);
+
+TABLE email_notifications (
+    id TEXT PRIMARY KEY,
+    request_id TEXT NOT NULL,
+    sender_id TEXT,
+    recipient_id TEXT NOT NULL,
+    recipient_email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    body_text TEXT NOT NULL,
+    delivery_details TEXT,
+    payment_details TEXT,
+    created_at TEXT NOT NULL,
+    is_read INTEGER DEFAULT 0,
+    FOREIGN KEY (request_id) REFERENCES adoption_requests(id) ON DELETE CASCADE
+);
+
+================================================================================
+6. USER FLOWS & STATE MACHINES
+================================================================================
+
+6.1 ADOPTER END-TO-END FLOW
+1. Adopter visits Homepage -> Explores featured puppies/kittens or opens Pet Map.
+2. Adopter filters by animal type (e.g. Dogs -> Puppies) and age (< 12 weeks).
+3. Opens Pet Details Screen -> Inspects photos, microchip, and vaccine dates.
+4. Taps "Adopt Me" -> Fills complete application form (reasons, experience, environment, pets).
+5. In-app application transitions to `pending` status. Owner receives application.
+6. Adopter tracks inquiry status on `/adopter/requests`.
+7. Once owner approves, adopter receives an official confirmation email.
+8. Adopter reviews delivery/handover instructions and payment method details in the portal.
+9. Adopter inspects email in the interactive email client (`EmailPreviewDialog`).
+10. Handover and payment take place -> Owner marks adoption as `completed`.
+
+6.2 CAREGIVER STORE & PET MANAGEMENT FLOW
+1. Pet Owner logs in -> Navigates to `/owner/dashboard`.
+2. Creates or updates Pet Store listing (`/owner/stores`).
+3. Adds young companion profile (`/owner/pets/add`) with photos and vet records.
+4. Listing becomes live on `/pets` and on the interactive map.
+5. When application arrives, notification appears on `/owner/requests`.
+6. Owner taps "Full Application" (`ApplicationDetailsModal`) to review applicant answers.
+7. Owner taps "Approve & Send" -> Configures delivery/pickup method, location, date,
+   instructions, payment method, fee, payment instructions, and congratulatory message.
+8. System records handover & payment agreement, updates pet to `pending`, and dispatches email.
+9. Following physical meetup and payment, owner taps "Finalize Adoption" -> Pet becomes `adopted`.
+
+6.3 ADOPTION REQUEST STATE TRANSITIONS
+        [ Application Submitted ]
+                   │
+                   ▼
+               ( pending )
+              /           \
+     Caregiver Approves [Delivery, Payment & Email]   Caregiver Rejects / Adopter Cancels
+            /               \
+           ▼                 ▼
+   ( approved )         ( rejected / cancelled )
+  (pet: pending)          (pet: available)
+           │
+  Finalize Adoption
+           │
+           ▼
+    ( completed )
+    (pet: adopted)
+
+================================================================================
+7. VERIFICATION, TESTING & QUALITY ASSURANCE
+================================================================================
+
+The platform includes exhaustive test suites covering all operational layers:
+1. `how_it_works_test.dart`: Validates role switcher, steps, FAQ, demo navigation.
+2. `about_screen_test.dart`: Validates mission, values, capabilities, team, guarantees.
+3. `home_animations_and_demo_test.dart`: Validates floating widgets, hover cards, 
+   and interactive cinema demo video controls/chapters.
+4. `map_feature_test.dart` & `map_screen_widget_test.dart`: Validates geospatial map.
+5. `adoption_workflow_test.dart`: Validates atomic state machine transitions.
+6. `adoption_handover_and_email_test.dart`: Validates application submission, owner review,
+   delivery/handover instructions, payment method specification, and email notifications.
+7. `phase8_final_verification_test.dart`: 22 security, isolation, and integrity tests.
+
+All automated tests execute and pass with zero failures.
+
+================================================================================
+8. APPENDIX & CREDENTIALS
+================================================================================
+
+8.1 PRE-SEEDED DEMO ACCOUNTS
+1. Pet Owner / Caregiver:
+   - Email: sarah@shelter.org
+   - Password: SecretPassword123!
+   - Associated Store: Whisker Haven Rescue Sanctuary
+2. Pet Adopter:
+   - Email: dave@home.net
+   - Password: SecretPassword123!
+
+8.2 AVAILABLE ROUTES
+- `/`: Home Page (includes Cinema Demo Video Showcase)
+- `/pets`: Find & Filter Young Companions
+- `/pets/:id`: Comprehensive Pet Details & Medical Passport
+- `/stores`: Certified Pet Stores Directory
+- `/stores/:id`: Store Details & Store-Isolated Pet Listings
+- `/map`: Interactive Geospatial Pet & Store Discovery Map
+- `/how-it-works`: Dual-Role Adoption Guide & Architecture Deep-Dive
+- `/about`: Official Web Application Mission, Guarantee & Leadership
+- `/login`: User Authentication
+- `/register`: New Account Registration
+- `/adopter/dashboard`: Adopter Inquiries, Bookmarks & Profile
+- `/owner/dashboard`: Caregiver Store, Catalog & Applicant Management
+
+================================================================================
+                       END OF SRS DOCUMENT SPECIFICATION
+================================================================================

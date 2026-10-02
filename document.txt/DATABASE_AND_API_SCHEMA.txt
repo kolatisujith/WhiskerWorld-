@@ -1,0 +1,169 @@
+================================================================================
+           WHISKER WORLD — DATABASE SCHEMA & API SPECIFICATION
+================================================================================
+
+1. SQLITE DATABASE SPECIFICATION
+--------------------------------------------------------------------------------
+Database Engine: SQLite 3
+Web Driver: sqflite_common_ffi_web (IndexedDB + WebAssembly)
+Desktop/VM Driver: sqflite_common_ffi + native sqlite3
+Foreign Keys: STRICTLY ENFORCED (`PRAGMA foreign_keys = ON;`)
+
+
+2. TABLE DEFINITIONS
+--------------------------------------------------------------------------------
+
+TABLE 1: users
+- id               TEXT PRIMARY KEY (UUID)
+- name             TEXT NOT NULL
+- email            TEXT UNIQUE NOT NULL
+- password_hash    TEXT NOT NULL (HMAC-SHA256 with 16-byte random salt: salt$hash)
+- phone            TEXT
+- role             TEXT NOT NULL CHECK(role IN ('pet_owner', 'pet_adopter'))
+- location         TEXT
+- avatar_url       TEXT
+- created_at       TEXT NOT NULL (ISO 8601)
+
+TABLE 2: pet_stores
+- id               TEXT PRIMARY KEY (UUID)
+- owner_id         TEXT NOT NULL (FK -> users.id ON DELETE CASCADE)
+- name             TEXT NOT NULL
+- description      TEXT
+- address          TEXT NOT NULL
+- city             TEXT NOT NULL
+- state            TEXT NOT NULL
+- zip_code         TEXT NOT NULL
+- latitude         REAL NOT NULL
+- longitude        REAL NOT NULL
+- phone            TEXT
+- email            TEXT
+- website          TEXT
+- rating           REAL DEFAULT 5.0
+- review_count     INTEGER DEFAULT 0
+- opening_hours    TEXT (JSON or formatted string)
+- logo_url         TEXT
+- cover_image_url  TEXT
+- is_verified      INTEGER DEFAULT 0 (Boolean 0 or 1)
+- created_at       TEXT NOT NULL (ISO 8601)
+
+TABLE 3: pets
+- id                   TEXT PRIMARY KEY (UUID)
+- store_id             TEXT NOT NULL (FK -> pet_stores.id ON DELETE CASCADE)
+- owner_id             TEXT NOT NULL (FK -> users.id ON DELETE CASCADE)
+- name                 TEXT NOT NULL
+- animal_type          TEXT NOT NULL (dog, cat, bird, rabbit, other)
+- young_term           TEXT NOT NULL (Puppy, Kitten, Kit, Chick, Foal)
+- breed                TEXT NOT NULL
+- age_in_days          INTEGER NOT NULL
+- age_display          TEXT NOT NULL (e.g. "8 weeks", "3 months")
+- life_stage           TEXT NOT NULL (newborn, baby, young, adolescent, adult, senior)
+- gender               TEXT NOT NULL (Male, Female)
+- size                 TEXT NOT NULL (Small, Medium, Large)
+- color                TEXT
+- description          TEXT
+- adoption_fee         REAL DEFAULT 0.0
+- availability_status  TEXT DEFAULT 'available' (available, pending, adopted)
+- is_vaccinated        INTEGER DEFAULT 1 (Boolean 0 or 1)
+- is_dewormed          INTEGER DEFAULT 1 (Boolean 0 or 1)
+- is_microchipped      INTEGER DEFAULT 1 (Boolean 0 or 1)
+- microchip_id         TEXT (ISO 15-digit number)
+- health_notes         TEXT
+- temperament_tags     TEXT (Comma-separated or JSON list)
+- photos_json          TEXT NOT NULL (JSON array of image paths/URLs)
+- created_at           TEXT NOT NULL (ISO 8601)
+
+TABLE 4: adoption_requests
+- id                     TEXT PRIMARY KEY (UUID)
+- pet_id                 TEXT NOT NULL (FK -> pets.id ON DELETE CASCADE)
+- adopter_id             TEXT NOT NULL (FK -> users.id ON DELETE CASCADE)
+- owner_id               TEXT (FK -> users.id ON DELETE SET NULL)
+- store_id               TEXT (FK -> pet_stores.id ON DELETE SET NULL)
+- status                 TEXT DEFAULT 'pending' (pending, approved, rejected, cancelled, completed)
+- message                TEXT NOT NULL
+- reason_for_adoption    TEXT (Applicant motivation)
+- pet_experience         TEXT (Pet care history & experience level)
+- living_environment     TEXT (Housing type, yard, apartment setup)
+- other_pets             TEXT (Current household animals)
+- contact_preference     TEXT (Email, Phone Call, Text / SMS)
+- delivery_method        TEXT (Owner Home Delivery, Store Pickup, Neutral Meetup, Safe Courier)
+- delivery_address       TEXT (Physical address or meetup landmark)
+- delivery_date          TEXT (Scheduled handover date and time)
+- delivery_instructions  TEXT (What to bring, carrier requirements, handover process)
+- payment_method         TEXT (Cash, Direct Bank Wire, UPI / Mobile Wallet, Store Card, Fee Waived)
+- payment_amount         REAL (Adoption fee charged)
+- payment_instructions   TEXT (Bank account details, UPI ID, or cash payment instructions)
+- approval_message       TEXT (Personalized congratulatory message from owner)
+- email_sent_to          TEXT (Adopter email destination)
+- email_sent_at          TEXT (ISO 8601 timestamp of email dispatch)
+- created_at             TEXT NOT NULL (ISO 8601)
+- updated_at             TEXT NOT NULL (ISO 8601)
+
+TABLE 5: favorites
+- id          TEXT PRIMARY KEY (UUID)
+- user_id     TEXT NOT NULL (FK -> users.id ON DELETE CASCADE)
+- pet_id      TEXT NOT NULL (FK -> pets.id ON DELETE CASCADE)
+- created_at  TEXT NOT NULL (ISO 8601)
+- CONSTRAINT unique_user_pet UNIQUE (user_id, pet_id)
+
+TABLE 6: email_notifications
+- id                TEXT PRIMARY KEY (UUID / generated ID)
+- request_id        TEXT NOT NULL (FK -> adoption_requests.id ON DELETE CASCADE)
+- sender_id         TEXT (FK -> users.id ON DELETE SET NULL)
+- recipient_id      TEXT NOT NULL (FK -> users.id ON DELETE CASCADE)
+- recipient_email   TEXT NOT NULL
+- subject           TEXT NOT NULL
+- body_text         TEXT NOT NULL (Full formatted email content)
+- delivery_details  TEXT (Summary of delivery method, location & instructions)
+- payment_details   TEXT (Summary of payment method, fee & instructions)
+- created_at        TEXT NOT NULL (ISO 8601)
+- is_read           INTEGER DEFAULT 0 (Boolean 0 or 1)
+
+
+3. KEY INDEXES FOR PERFORMANCE
+--------------------------------------------------------------------------------
+- idx_pets_store_id:                 CREATE INDEX idx_pets_store_id ON pets(store_id);
+- idx_pets_status:                   CREATE INDEX idx_pets_status ON pets(availability_status);
+- idx_pets_type:                     CREATE INDEX idx_pets_type ON pets(animal_type);
+- idx_adoption_requests_pet:         CREATE INDEX idx_adoption_requests_pet ON adoption_requests(pet_id);
+- idx_adoption_requests_adopter:     CREATE INDEX idx_adoption_requests_adopter ON adoption_requests(adopter_id);
+- idx_adoption_requests_owner:       CREATE INDEX idx_adoption_requests_owner ON adoption_requests(owner_id);
+- idx_adoption_requests_status:      CREATE INDEX idx_adoption_requests_status ON adoption_requests(status);
+- idx_favorites_user:                CREATE INDEX idx_favorites_user ON favorites(user_id);
+- idx_email_notifications_recipient: CREATE INDEX idx_email_notifications_recipient ON email_notifications(recipient_id);
+- idx_email_notifications_request:   CREATE INDEX idx_email_notifications_request ON email_notifications(request_id);
+
+
+4. CORE PARAMETERIZED QUERIES (STORE ISOLATION, HANDOVER & ADOPTION)
+--------------------------------------------------------------------------------
+
+-- Store-Isolated Pet Query (Strict isolation):
+SELECT * FROM pets 
+WHERE store_id = ? AND availability_status = 'available' 
+ORDER BY created_at DESC;
+
+-- Atomic Adoption Approval with Handover, Payment & Email Notification:
+UPDATE pets SET availability_status = 'pending', updated_at = ? WHERE id = ?;
+UPDATE adoption_requests SET 
+    status = 'approved',
+    delivery_method = ?,
+    delivery_address = ?,
+    delivery_date = ?,
+    delivery_instructions = ?,
+    payment_method = ?,
+    payment_amount = ?,
+    payment_instructions = ?,
+    approval_message = ?,
+    email_sent_to = ?,
+    email_sent_at = ?,
+    updated_at = ? 
+WHERE id = ?;
+INSERT INTO email_notifications (id, request_id, sender_id, recipient_id, recipient_email, subject, body_text, delivery_details, payment_details, created_at, is_read)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);
+
+-- Atomic Adoption Completion:
+UPDATE pets SET availability_status = 'adopted', updated_at = ? WHERE id = ?;
+UPDATE adoption_requests SET status = 'completed', updated_at = ? WHERE id = ?;
+-- Auto-reject other competing applications:
+UPDATE adoption_requests SET status = 'rejected', updated_at = ? 
+WHERE pet_id = ? AND id != ? AND status = 'pending';
+
